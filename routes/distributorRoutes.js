@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-const modeDistributor = require("../models/distributor");
+const modeDistributor = require("../models/distributors");
 
 router.get("/test", function (reg, res, next) {
   res.send("respond with a resource distributor test");
@@ -32,9 +32,22 @@ router.post("/add", async (req, res) => {
 });
 //
 router.get("/list", async (req, res) => {
-  const result = await modeDistributor.find({});
   try {
-    res.send(result);
+    const result = await modeDistributor.find({});
+    // res.send(result);
+    if (result) {
+      res.json({
+        status: 200,
+        message: "List",
+        data: result,
+      });
+    } else {
+      res.json({
+        status: 400,
+        message: "Lỗi không có dữ liệu",
+        data: result,
+      });
+    }
   } catch (error) {
     console.log(error);
   }
@@ -44,7 +57,11 @@ router.get("/getbyid/:id", async (req, res) => {
   const result = await modeDistributor.findById(req.params.id);
   try {
     if (result) {
-      res.send(result);
+      res.json({
+        status: 200,
+        message: "Đã tìm thấy  ",
+        data: result,
+      });
     } else {
       res.json({
         status: 400,
@@ -61,7 +78,7 @@ router.get("/getbyid/:id", async (req, res) => {
     }
   }
 });
-router.patch("/edit/:id", async (req, res) => {
+router.put("/edit/:id", async (req, res) => {
   const result = await modeDistributor.findByIdAndUpdate(
     req.params.id,
     req.body
@@ -69,7 +86,11 @@ router.patch("/edit/:id", async (req, res) => {
   try {
     if (result) {
       const rs = await result.save();
-      res.send(rs);
+      res.json({
+        status: 200,
+        message: "Cập nhật thành công ID  ",
+        data: result,
+      });
     } else {
       res.json({
         status: 400,
@@ -112,6 +133,30 @@ router.delete("/delete/:id", async (req, res) => {
       console.log(error);
       res.status(500).send("Internal Server");
     }
+  }
+});
+
+router.get("/search", async (req, res) => {
+  try {
+    const key = req.query.key;
+    const result = await modeDistributor
+      .find({ name: { $regex: key, $options: "i" } })
+      .sort({ createAt: -1 });
+    if (result) {
+      res.json({
+        status: 200,
+        message: "Tìm thấy",
+        data: result,
+      });
+    } else {
+      res.json({
+        status: 400,
+        message: "Lỗi không có dữ liệu",
+        data: result,
+      });
+    }
+  } catch (error) {
+    console.log(error);
   }
 });
 

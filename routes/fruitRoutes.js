@@ -114,5 +114,56 @@ router.delete("/delete/:id", async (req, res) => {
     }
   }
 });
+//-------LAb7------------------------
+router.get("/get-page-fruit", async (req, res) => {
+  // Autenticazione
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (token == null) return res.sendStatus(401);
+
+  let payload;
+
+  JWT.verify(token, SECRETKEY, (err, payload) => {
+    if (err instanceof JWT.TokenExpiredError) return res.sendStatus(401);
+    if (err) return res.sendStatus(403);
+    payload = payload;
+  });
+
+  let perPage = 6; // Số lượng sản phẩm xuất hiện trên 1 page
+  let page = req.query.page || 1; // Page truyền lên
+  let skip = perPage * page;
+  let count = await Fruits.find().count(); // Lấy tổng số phần tử
+  let totalPage = Math.ceil(count / perPage); // Phân trang
+
+  // Lọc
+  // Lọc theo tên
+  const name = { $regex: req.query.name ?? "", $options: "i" };
+  // Lọc giá lớn hơn hoặc bằng giá truyền vào
+  const price = { $gte: req.query.price ?? 0 };
+  // Lọc sắp xếp theo giá
+  const sort = { price: req.query.sort ?? 1 };
+
+  try {
+    const data = await Fruits.find({ name: name, price: price })
+      .populate("id_distributor")
+      .sort(sort)
+      .skip(skip)
+      .limit(perPage);
+
+    res.json({
+      status: 200,
+      messenger: "Danh sách fruit",
+      data: {
+        data: data,
+        totalPage: totalPage,
+        currentPage: Number(page),
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
 
 module.exports = router;
